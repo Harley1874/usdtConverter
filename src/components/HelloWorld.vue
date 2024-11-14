@@ -1,6 +1,6 @@
 <script setup lang="ts">
 declare const chrome: any;
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, } from 'vue';
 import { getC2CList } from '../api/c2c';
 
 const handleRefreshRate = async () => {
@@ -32,27 +32,89 @@ onMounted(() => {
   }
   handleRefreshRate();
 });
+
 const handleConvert = () => {
-  startConvert();
+  modifyPageWithParams(currentRate.value)
 };
-const startConvert = async () => {
-  const data = JSON.parse(localStorage.getItem('c2cList') || '{}');
-  if (data && data.currentRate) {
-    console.log(`当前汇率`, data.currentRate)
-    // 获取 所有 class名字是amount，且innerText中第一个文字是 $ 符号的元素
-    const amountElements: HTMLDivElement[] = Array.from(document.querySelectorAll('.amount'));
-    console.log(`output->所有amount元素`,amountElements)
-    const result = amountElements.filter(item => item.innerText.startsWith('$'))
-    // 在这个元素后，追加一个元素 内容为 data.currentRate * item.innerText
-    result.forEach(item => {
-      const newElement: HTMLDivElement = document.createElement('div');
-      newElement.innerText = (data.currentRate * Number(item.innerText)).toString();
-      newElement.style.color = 'red';
-      item.parentNode?.appendChild(newElement);
-    })
-    console.log(`output->result`, result)
-  }
+
+const modifyPageWithParams = async (rate:number) => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+  // 准备要传递的参数
+  const params = {
+    currentRate:rate
+  };
+
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id! },
+    args: [params], // 传递参数
+    function: (params:any) => {
+      // 使用传入的参数修改页面
+      const elements: HTMLElement[] = Array.from(document.querySelectorAll('.target'));
+      elements.forEach(el => {
+        el.style.color = params.color;
+        el.textContent = params.text;
+      });
+
+      function modifyContent() {
+        console.log(`output->开始转换`,params.currentRate)
+        // 查找页面中所有class为amount，且innerText中第一个文字是 $ 符号的元素
+        const amountElements: HTMLDivElement[] = Array.from(document.querySelectorAll('.amount'));
+        const result = amountElements.filter(item => item.innerText.startsWith('$'))
+        console.log(`output-> 查找到的元素`,result)
+        result.forEach(item => {
+          const newElement: HTMLDivElement = document.createElement('div');
+          // 元素的金额
+          const amount = item.innerText.replace('$', '');
+          newElement.innerText = (params.currentRate * Number(amount)).toFixed(2).toString();
+          newElement.style.color = 'red';
+          item.parentNode?.appendChild(newElement);
+        })
+      }
+      // 执行修改
+      modifyContent();
+    }
+  });
 };
+
+// const watchAndModify = async () => {
+//   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+//   chrome.scripting.executeScript({
+//     target: { tabId: tab.id! },
+//     function: () => {
+//       // 创建观察器
+//       const observer = new MutationObserver((mutations) => {
+//         mutations.forEach((mutation) => {
+//           // 处理DOM变化
+//           if (mutation.type === 'childList') {
+//             // 新增的节点
+//             mutation.addedNodes.forEach(node => {
+//               if (node instanceof HTMLElement) {
+//                 // 新增的节点中，如果innerText中第一个文字是 $ 符号，则在这个元素的后方追加一个元素，内容为 data.currentRate * item.innerText
+//                 if (node.innerText.startsWith('$')) {
+//                   const newElement: HTMLDivElement = document.createElement('div');
+//                   newElement.innerText = (currentRate.value * Number(node.innerText)).toString();
+//                   newElement.style.color = 'red';
+//                   node.parentNode?.appendChild(newElement);
+//                 }
+//               }
+//             });
+//           }
+//         });
+//       });
+
+//       // 配置观察选项
+//       const config = {
+//         childList: true,
+//         subtree: true
+//       };
+
+//       // 开始观察
+//       observer.observe(document.body, config);
+//     }
+//   });
+// };
 </script>
 
 <template>

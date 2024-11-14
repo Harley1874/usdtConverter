@@ -66,7 +66,8 @@ const modifyPageWithParams = async (rate:number) => {
           const newElement: HTMLDivElement = document.createElement('div');
           // 元素的金额
           const amount = item.innerText.replace('$', '');
-          newElement.innerText = (params.currentRate * Number(amount)).toFixed(2).toString();
+          const amountNumber = Number(amount.replace(/,/g, ''));
+          newElement.innerText = (params.currentRate * amountNumber).toFixed(2).toString();
           newElement.style.color = 'red';
           item.parentNode?.appendChild(newElement);
         })

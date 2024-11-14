@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Vue Currency Converter",
+  "version": "1.0",
+  "description": "快速转换多国币种价格的工具",
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": "icons/icon-48.png"
+  },
+  "icons": {
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["activeTab","scripting"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions":[
+    "<all_urls>"
+  ]
+}

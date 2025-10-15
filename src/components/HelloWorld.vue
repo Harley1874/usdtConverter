@@ -5,7 +5,9 @@ import { getC2CList } from '../api/c2c';
 
 const handleRefreshRate = async () => {
   const res = await getC2CList();
-  currentRate.value = res.data[0].adv.price;
+  const priceList = res.data.map((item: any) => Number(item.adv.price));
+  const maxPrice = Math.max(...priceList);
+  currentRate.value = maxPrice;
 
   // 将计算出来的金额存进本地，带有当前时间戳
   const obj = {
